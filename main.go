@@ -294,7 +294,6 @@ func insertFirst(preSymbol []string, table map[string][]byte, VT []string, strTo
 }
 
 func insertLast(preSymbol byte, table map[string][]byte, VT []string, strToIdx map[string]int, symbol byte) bool {
-
 	for _, i := range VT {
 		if table[i][strToIdx[string(preSymbol)]] != byte(0) {
 			return false
@@ -305,7 +304,6 @@ func insertLast(preSymbol byte, table map[string][]byte, VT []string, strToIdx m
 }
 
 func output(strToIdx map[string]int, res map[string][]byte, size int) {
-
 	idxToStr := make([]string, size)
 	for k,v := range strToIdx {
 		idxToStr[v] = k
@@ -325,46 +323,60 @@ func output(strToIdx map[string]int, res map[string][]byte, size int) {
 	}
 }
 
+func writeToFile(strToIdx map[string]int, res map[string][]byte, size int, path string) {
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}(file)
+
+	idxToStr := make([]string, size)
+	for k,v := range strToIdx {
+		idxToStr[v] = k
+	}
+
+	fmt.Fprintf(file, " \t")
+	for _, v := range idxToStr {
+		_, err2 := fmt.Fprintf(file, "%s \t", v)
+		if err2 != nil {
+			return
+		}
+	}
+
+	for _, v := range idxToStr {
+		fmt.Fprintf(file, "\n")
+		fmt.Fprintf(file, "%s \t", v)
+		for _, j := range res[v] {
+			if j == byte(0) {
+				fmt.Fprintf(file, " \t")
+			} else {
+				fmt.Fprintf(file,"%s \t", string(j))
+			}
+		}
+	}
+}
+
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Println("Error, usage main.exe filepath.")
+	if len(os.Args) != 3 {
+		fmt.Println("Error, usage main.exe read_filepath write_filepath.")
 	}
 	path := os.Args[1]
 	var input []string
 	input = readFile(path)
-	//for i:=0; i< len(input); i++ {
-	//	fmt.Println(input[i])
-	//}
+
 	nontermlist := make(map[string]nonterm)
 	termlist := make(map[string]term)
 	nontermlist = getNoTerm(input)
 	termlist = getTerm(input, nontermlist)
-	//now, we get the list of terminal symbol & the list of nonterminal symbol
-	/*
-	for k, _ := range nontermlist {
-		fmt.Println(k)
-	}
-	for k, _ := range termlist {
-		fmt.Println(k)
-	}
 
-	 */
 	getVT(input, nontermlist)
-
-	for k, v := range nontermlist {
-		fmt.Println("终结符为：")
-		fmt.Printf("%s \n", k)
-		fmt.Println("firstvt:")
-		for _, i := range v.first {
-			fmt.Printf("%s, ", i)
-		}
-		fmt.Println("\nlastvt:")
-		for _, i := range v.last {
-			fmt.Printf("%s , ", i)
-		}
-	}
-	fmt.Println()
-
 
 	strToIdx := make(map[string]int)
 	i := 0
@@ -376,11 +388,18 @@ func main() {
 	var res map[string][]byte
 	var ok bool
 	if res, ok = genTable(input, nontermlist, termlist, strToIdx); !ok {
+		file, err := os.OpenFile(os.Args[2], os.O_WRONLY|os.O_CREATE, 0666)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer file.Close()
+		fmt.Fprintf(file, "文法具有二义性!请修改文法后重试!\n")
 		return
 	}
 
  	output(strToIdx, res, i)
-
+	writeToFile(strToIdx, res, i, os.Args[2])
 }
 
 

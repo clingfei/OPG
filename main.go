@@ -45,12 +45,12 @@ func readFile(path string) []string {
 	return input
 }
 
-func getNoTerm(input []string) map[string]nonterm {
+func getNoTerm(rules []string) map[string]nonterm {
 	//the list of nonterm
 	termlist := make(map[string]nonterm)
 
-	for i:=0; i<len(input); i++ {
-		termlist[string(input[i][0])] = nonterm{make([]string, 0), make([]string, 0)}
+	for i:=0; i<len(rules); i++ {
+		termlist[string(rules[i][0])] = nonterm{make([]string, 0), make([]string, 0)}
 	}
 	return termlist
 }
@@ -366,6 +366,7 @@ func writeToFile(strToIdx map[string]int, res map[string][]byte, size int, path 
 func main() {
 	if len(os.Args) != 3 {
 		fmt.Println("Error, usage main.exe read_filepath write_filepath.")
+		return
 	}
 	path := os.Args[1]
 	var input []string
